@@ -120,7 +120,8 @@
     right: var(--gap);
     bottom: 32px;
     font-size: 14px;
-    color: var(--fg-dim);
+    color: var(--fg);
+    opacity: 0.5;
     z-index: 2;
   }
 </style>
@@ -183,7 +184,9 @@
 
         const updatedEl = document.getElementById("updated");
         const t = new Date(data.updated);
-        updatedEl.textContent = "Uppdaterad " + t.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
+        const datePart = t.toLocaleDateString("sv-SE", { day: "numeric", month: "long" });
+        const timePart = t.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
+        updatedEl.textContent = "Uppdaterad " + datePart + ", " + timePart;
       } catch (err) {
         console.error("Kunde inte hämta meny", err);
       }
