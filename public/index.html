@@ -8,7 +8,7 @@
   :root {
     --fg: #f4f2ee;
     --fg-dim: rgba(244, 242, 238, 0.75);
-    --gap: 56px;
+    --gap: 120px;
   }
 
   * { box-sizing: border-box; }
@@ -74,7 +74,7 @@
   .content {
     position: absolute;
     left: var(--gap);
-    bottom: 92px;
+    bottom: var(--gap);
     max-width: 900px;
     z-index: 2;
   }
@@ -117,8 +117,8 @@
 
   .updated {
     position: absolute;
-    right: var(--gap);
-    bottom: 32px;
+    right: 40px;
+    bottom: 40px;
     font-size: 14px;
     color: var(--fg);
     opacity: 0.5;
