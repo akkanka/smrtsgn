@@ -18,6 +18,30 @@ function todayWeekday() {
   return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
+// HTMLRewriter doesn't decode HTML entities in text nodes, so numeric refs
+// like &#xE9; (é) or &#xF6; (ö) come through literally. Decode the common ones.
+function decodeEntities(str) {
+  return str
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
+    .replace(/&aring;/gi, "å")
+    .replace(/&auml;/gi, "ä")
+    .replace(/&ouml;/gi, "ö")
+    .replace(/&Aring;/g, "Å")
+    .replace(/&Auml;/g, "Ä")
+    .replace(/&Ouml;/g, "Ö")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
+function normalize(str) {
+  return decodeEntities(str).trim().replace(/\s+/g, " ");
+}
+
 async function scrapeMenu() {
   const res = await fetch(SOURCE_URL, {
     headers: { "User-Agent": "smrtsgn-lunch-tv/1.0" },
@@ -68,13 +92,13 @@ async function scrapeMenu() {
   const transformed = rewriter.transform(res);
   await transformed.arrayBuffer(); // drain the stream to run all handlers
 
-  // Normalize whitespace
+  // Normalize whitespace and decode HTML entities
   for (const slide of slides) {
-    slide.title = slide.title.trim().replace(/\s+/g, " ");
-    slide.info = slide.info.trim().replace(/\s+/g, " ");
+    slide.title = normalize(slide.title);
+    slide.info = normalize(slide.info);
     for (const meal of slide.meals) {
-      meal.title = meal.title.trim().replace(/\s+/g, " ");
-      meal.desc = meal.desc.trim().replace(/\s+/g, " ");
+      meal.title = normalize(meal.title);
+      meal.desc = normalize(meal.desc);
     }
   }
 
