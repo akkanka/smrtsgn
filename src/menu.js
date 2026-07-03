@@ -141,11 +141,18 @@ function buildResponsePayload(slide) {
 }
 
 export async function getMenu(request, env, ctx) {
-  const cache = caches.default;
-  const cacheKey = new Request(request.url, request);
+  const url = new URL(request.url);
+  const forceRefresh = url.searchParams.get("refresh") === "1";
 
-  const cached = await cache.match(cacheKey);
-  if (cached) return cached;
+  const cache = caches.default;
+  // Canonical key (no query string) — this is what the TV page always requests.
+  const canonicalUrl = `${url.origin}${url.pathname}`;
+  const cacheKey = new Request(canonicalUrl, request);
+
+  if (!forceRefresh) {
+    const cached = await cache.match(cacheKey);
+    if (cached) return cached;
+  }
 
   let payload;
   try {
