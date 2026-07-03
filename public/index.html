@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8" />
+<title>Astern – Dagens lunch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --fg: #f4f2ee;
+    --fg-dim: rgba(244, 242, 238, 0.75);
+    --gap: 56px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #1a1a18;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    color: var(--fg);
+  }
+
+  .screen {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background-image: url("assets/astrnbg.jpg");
+    background-size: cover;
+    background-position: center;
+  }
+
+  .screen::after {
+    /* extra bottom-left darkening so text stays readable regardless of photo */
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to top right,
+      rgba(0, 0, 0, 0.55) 0%,
+      rgba(0, 0, 0, 0.25) 35%,
+      rgba(0, 0, 0, 0) 60%
+    );
+    pointer-events: none;
+  }
+
+  .top-bar {
+    position: absolute;
+    top: var(--gap);
+    left: var(--gap);
+    right: var(--gap);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    z-index: 2;
+  }
+
+  .hours {
+    font-size: 22px;
+    letter-spacing: 0.3px;
+    color: var(--fg);
+    font-weight: 400;
+  }
+
+  .logo img {
+    display: block;
+    height: 200px;
+    width: auto;
+  }
+
+  .content {
+    position: absolute;
+    left: var(--gap);
+    bottom: 92px;
+    max-width: 900px;
+    z-index: 2;
+  }
+
+  .content h1 {
+    margin: 0 0 34px;
+    font-size: 44px;
+    letter-spacing: 1px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .meal {
+    margin-bottom: 26px;
+  }
+
+  .meal:last-child { margin-bottom: 0; }
+
+  .meal .category {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .meal .dish {
+    font-size: 24px;
+    font-weight: 300;
+    line-height: 1.4;
+    color: var(--fg);
+  }
+
+  .closed-message {
+    font-size: 26px;
+    font-weight: 300;
+    line-height: 1.5;
+    max-width: 760px;
+  }
+
+  .updated {
+    position: absolute;
+    right: var(--gap);
+    bottom: 32px;
+    font-size: 14px;
+    color: var(--fg-dim);
+    z-index: 2;
+  }
+</style>
+</head>
+<body>
+  <div class="screen">
+    <div class="top-bar">
+      <div class="hours" id="hours">Serveras måndagar–fredagar 11.30–14.00</div>
+      <div class="logo"><img src="assets/astrnlogo.svg" alt="Astern" /></div>
+    </div>
+
+    <div class="content" id="content">
+      <h1>Dagens lunch</h1>
+      <div id="meals"></div>
+    </div>
+
+    <div class="updated" id="updated"></div>
+  </div>
+
+  <script>
+    const REFRESH_MS = 5 * 60 * 1000; // poll every 5 min, API itself is cached 30 min
+
+    function renderMeals(data) {
+      const mealsEl = document.getElementById("meals");
+      const contentEl = document.getElementById("content");
+      mealsEl.innerHTML = "";
+
+      if (!data.open || !data.meals || data.meals.length === 0) {
+        contentEl.querySelector("h1").textContent = "Dagens lunch";
+        const p = document.createElement("div");
+        p.className = "closed-message";
+        p.textContent = data.info || "Ingen lunchmeny tillgänglig just nu.";
+        mealsEl.appendChild(p);
+        return;
+      }
+
+      for (const meal of data.meals) {
+        const wrap = document.createElement("div");
+        wrap.className = "meal";
+
+        const cat = document.createElement("div");
+        cat.className = "category";
+        cat.textContent = meal.category;
+
+        const dish = document.createElement("div");
+        dish.className = "dish";
+        dish.textContent = meal.dish;
+
+        wrap.appendChild(cat);
+        wrap.appendChild(dish);
+        mealsEl.appendChild(wrap);
+      }
+    }
+
+    async function loadMenu() {
+      try {
+        const res = await fetch("/api/menu.json", { cache: "no-store" });
+        const data = await res.json();
+        renderMeals(data);
+
+        const updatedEl = document.getElementById("updated");
+        const t = new Date(data.updated);
+        updatedEl.textContent = "Uppdaterad " + t.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
+      } catch (err) {
+        console.error("Kunde inte hämta meny", err);
+      }
+    }
+
+    loadMenu();
+    setInterval(loadMenu, REFRESH_MS);
+  </script>
+</body>
+</html>
